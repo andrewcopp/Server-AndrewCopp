@@ -24,8 +24,8 @@ func init() {
 }
 
 func main() {
-	log.Println("Deploying on :8001")
-	if err := http.ListenAndServe(":8001", nil); err != nil {
+	log.Println("Deploying on :8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Println("Failure!")
 	}
 }
