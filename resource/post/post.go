@@ -21,6 +21,7 @@ func init() {
 
 	db = &sql.DB{}
 	http.HandleFunc("/posts/", handler)
+	http.HandleFunc("/posts/status/", status)
 }
 
 func main() {
@@ -64,6 +65,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 		w.Write(res)
 	}
+}
+
+func status(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(200)
 }
 
 type ReadPostRequest struct {
