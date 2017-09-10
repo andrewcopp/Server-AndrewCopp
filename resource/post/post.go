@@ -3,28 +3,45 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
+
+	_ "github.com/lib/pq"
 )
 
 var db *sql.DB
-var mock map[int]string
 
 func init() {
-	mock = map[int]string{
-		1: "Hello, World!",
-		2: "It's working. It's working!",
-		3: "This one starts like an actual blog post. Too bad it is static.",
+
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	user := os.Getenv("DB_USER")
+	pass := os.Getenv("DB_PASSWORD")
+	dbname := os.Getenv("DB_DBNAME")
+
+	info := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, pass, dbname)
+
+	var err error
+	db, err = sql.Open("postgres", info)
+	if err != nil {
+		log.Fatalln(err.Error())
 	}
 
-	db = &sql.DB{}
+	err = db.Ping()
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+
 	http.HandleFunc("/posts/", handler)
 	http.HandleFunc("/posts/status/", status)
 }
 
 func main() {
+	defer db.Close()
 	log.Println("Deploying on :8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Println(err.Error())
@@ -42,20 +59,33 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 		}
 
-		if post, ok := mock[id]; ok {
-			res, err := json.Marshal(post)
-			if err != nil {
+		row := db.QueryRow("SELECT title FROM posts WHERE id = $1;", id)
 
-			}
+		var title string
+		row.Scan(
+			&title,
+		)
 
-			w.Write(res)
+		res, err := json.Marshal(title)
+		if err != nil {
+
 		}
 
-	} else {
-		posts := []string{}
+		w.Write(res)
 
-		for _, post := range mock {
-			posts = append(posts, post)
+	} else {
+		rows, err := db.Query("SELECT title FROM posts;")
+		if err != nil {
+			log.Fatalln(err.Error())
+		}
+
+		posts := []string{}
+		for rows.Next() {
+			var title string
+			rows.Scan(
+				&title,
+			)
+			posts = append(posts, title)
 		}
 
 		res, err := json.Marshal(posts)

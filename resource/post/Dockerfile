@@ -6,6 +6,7 @@ FROM golang
 ADD . /go/src/github.com/andrewcopp/andrewcopp/resource/posts
 
 # Build the posts command inside the container.
+RUN go get github.com/lib/pq
 RUN go install github.com/andrewcopp/andrewcopp/resource/posts
 
 # Run the posts command by default when the container starts.
